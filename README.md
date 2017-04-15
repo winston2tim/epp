@@ -7,4 +7,4 @@
 
 仅支持Windows 7及更新的64位操作系统
 
-[v1.0下载](https://github.com/winston2tim/epp/files/907325/epp_v1.0.zip)
+[v1.1下载](https://github.com/winston2tim/epp/releases/download/v1.1/epp_v1.1.zip)
