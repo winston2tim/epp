@@ -2,7 +2,6 @@
 #include "BidInfoMonitor.h"
 
 #define MAXBUF 0xFFFF
-static unsigned char key[16] = "!@p!a";
 
 static wchar_t *UTF8ToUTF16(const char* msg, int len)
 {

@@ -6,7 +6,6 @@
 #include "BidInfoMonitor.h"
 
 #define WM_POSTCALLBACK WM_USER+0x123
-#define ASYNC_TIMERID 0x1000;
 
 void CallBackReceivedBidMsg(const BidMessage& bidMsg, void *arg);
 
@@ -57,13 +56,21 @@ public:
 
   virtual BOOL PreTranslateMessage(MSG* pMsg)
 	{
+    // skip 'escape' key to avoid exit the main dialog window accidently.
     if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_ESCAPE)
       return TRUE;
 
+    // handle 'enter' key on IE browser window.
     if (pMsg && pMsg->hwnd == (HWND)m_browserWnd && pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_RETURN)
       PostAction(&CMainDlg::OnIEEnterKey, pMsg->wParam, pMsg->lParam);
 
-		return ::IsDialogMessage(m_hWnd, pMsg);
+    // translate accelerator key in IE browser.
+    CComQIPtr<IOleInPlaceActiveObject> pIOIPAO;
+    if (pMsg->message >= WM_KEYFIRST && pMsg->message <= WM_KEYLAST
+        && (pIOIPAO = m_pWebBrowser) && !pIOIPAO->TranslateAccelerator(pMsg))
+        return TRUE;
+
+    return ::IsDialogMessage(m_hWnd, pMsg);
 	}
 
   bool HandleNewPriceMessage();
