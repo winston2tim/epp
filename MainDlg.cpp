@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "MainDlg.h"
 
+#define TIMER_FORCESUBMIT 0x100
+
 #define FOCUS_ON_PRICE    ClickBrowser(720, 250);
 #define SUBMIT_PRICE      ClickBrowser(800, 250);
 #define FOCUS_ON_CAPTCHA  ClickBrowser(740, 255);
@@ -103,6 +105,7 @@ BOOL CMainDlg::OnIdle()
 
   EnableDlgItem(IDC_CHECK_AUTOBID, bTradeServerValid && m_latestBidMsg.phase == BidMessage::ModifyPhase);
   EnableDlgItem(IDC_CHECK_SUBMITCAPTCHA, bTradeServerValid && m_latestBidMsg.phase == BidMessage::ModifyPhase);
+  EnableDlgItem(IDC_CHECK_FORCESUBMITTIME, bTradeServerValid && m_latestBidMsg.phase == BidMessage::ModifyPhase);
 
   return TRUE;
 }
@@ -132,7 +135,7 @@ void __stdcall CMainDlg::OnNavigateComplete2(IDispatch* pDisp, VARIANT* URL)
   LOGI << "OnNavigateComplete2";
 }
 
-LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+LRESULT CMainDlg::OnInitDialog(HWND /*hWnd*/, LPARAM /*lParam*/)
 {
   // center the dialog on the screen
   CenterWindow();
@@ -170,6 +173,8 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
   captchaPriceSpinCtrl.SetRange(0, 10000);
   captchaPriceSpinCtrl.SetAccel(1, &udaccel);
 
+  CUpDownCtrl(GetDlgItem(IDC_SPIN_FORCESUBMITTIME)).SetRange(1, 1800);
+
   // Set log level
   CComboBox(GetDlgItem(IDC_COMBO_LOG)).SetCurSel(plog::info);
 
@@ -182,29 +187,25 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
   return TRUE;
 }
 
-LRESULT CMainDlg::OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
+void CMainDlg::OnDestroy()
 {
   if (m_pWebBrowser)
     m_pWebBrowser.Release();
-
-  bHandled = FALSE;
-  return 0;
 }
 
-LRESULT CMainDlg::OnCtlColorStatic(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+HBRUSH CMainDlg::OnCtlColorStatic(CDCHandle dc, CStatic wndStatic)
 {
-  CDCHandle dc((HDC)wParam);
-  if (GetDlgItem(IDC_STATIC_REMAIN_TIME) == (HWND)lParam
-    || GetDlgItem(IDC_STATIC_TRADEABLE_PRICE) == (HWND)lParam
-    || GetDlgItem(IDC_STATIC_SERVERTIME) == (HWND)lParam)
+  if (GetDlgItem(IDC_STATIC_REMAIN_TIME) == (HWND)wndStatic
+    || GetDlgItem(IDC_STATIC_TRADEABLE_PRICE) == (HWND)wndStatic
+    || GetDlgItem(IDC_STATIC_SERVERTIME) == (HWND)wndStatic)
   {
     RECT rect;
-    ::GetClientRect(HWND(lParam), &rect);
+    wndStatic.GetClientRect(&rect);
     COLORREF bkColor = ::GetSysColor(COLOR_3DFACE);
     dc.FillSolidRect(&rect, bkColor);
     dc.SetBkMode(TRANSPARENT);
     dc.SetTextColor(RGB(0xFF, 0x00, 0x00));
-    return (LRESULT)::GetStockObject(NULL_BRUSH);
+    return (HBRUSH)::GetStockObject(NULL_BRUSH);
   }
 
   return 0;
@@ -239,10 +240,9 @@ void CMainDlg::CloseDialog(int nVal)
   ::PostQuitMessage(nVal);
 }
 
-LRESULT CMainDlg::OnSysCommand(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled)
+void CMainDlg::OnSysCommand(UINT nID, CPoint point)
 {
-  bHandled = FALSE;
-  return 0;
+  SetMsgHandled(FALSE);
 }
 
 void CMainDlg::ClickBrowser(int x, int y)
@@ -300,7 +300,7 @@ void CMainDlg::AutoBid(int price)
   // click bid button
   SUBMIT_PRICE
 
-  LOGI << "Auto bidded!";
+  LOGI << "Auto bidded, price = " << price;
 }
 
 LRESULT CMainDlg::OnIEEnterKey(WPARAM /*wParam*/, LPARAM /*lParam*/)
@@ -332,6 +332,50 @@ LRESULT CMainDlg::OnIEEnterKey(WPARAM /*wParam*/, LPARAM /*lParam*/)
   return 0;
 }
 
+void CMainDlg::OnTimer(UINT_PTR nIDEvent)
+{
+  if (nIDEvent == TIMER_FORCESUBMIT)
+  {
+    // click the OK button to submit CAPTCHA and price
+    m_browserWnd.SetActiveWindow();
+    m_browserWnd.SetFocus();
+    SUBMIT_CAPTCHA
+
+    LOGI << "Force price submitted!";
+    KillTimer(TIMER_FORCESUBMIT);
+    m_bAutoSubmitByTime = false;
+    DoDataExchange(FALSE, IDC_CHECK_FORCESUBMITTIME);
+    GetDlgItem(IDC_EDIT_FORCESUBMITTIME).EnableWindow(TRUE);
+  }
+}
+
+LRESULT CMainDlg::OnBnClickedForceSubmitByTime(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+{
+  DoDataExchange(TRUE);
+  if (m_bAutoSubmitByTime)
+  {
+    float elapse = (float)m_latestBidMsg.endTime - GetLocalTimeAsSeconds() - m_fFinalSubmitTime;
+    if (elapse > 0)
+    {
+      SetTimer(TIMER_FORCESUBMIT, (UINT)(elapse*1000.0f), NULL);
+      GetDlgItem(IDC_EDIT_FORCESUBMITTIME).EnableWindow(FALSE);
+      LOGI << "Start forece submit timer, elapse = " << (UINT)(elapse*1000.0f) << " ms";
+    }
+    else
+    {
+      m_bAutoSubmitByTime = false;
+      DoDataExchange(FALSE, IDC_CHECK_FORCESUBMITTIME);
+    }
+  }
+  else
+  {
+    KillTimer(TIMER_FORCESUBMIT);
+    GetDlgItem(IDC_EDIT_FORCESUBMITTIME).EnableWindow(TRUE);
+  }
+
+  return 0;
+}
+
 LRESULT CMainDlg::OnTest(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
   DoDataExchange(TRUE);
@@ -354,6 +398,9 @@ LRESULT CMainDlg::OnReceivedBidMsg(WPARAM wParam, LPARAM lParam)
   int remainingSeconds = m_latestBidMsg.endTime - m_latestBidMsg.serverTime;
   float serverDelay = (float)m_latestBidMsg.serverTime - GetLocalTimeAsSeconds();
   HandleNewPriceMessage();
+
+  if (m_latestBidMsg.phase == BidMessage::ModifyPhase && remainingSeconds >= 0 && remainingSeconds <= 30)
+    LOGI << "Remain time: " << remainingSeconds << " s, price: " << m_latestBidMsg.tradeablePrice;
 
   CString strMsg;
 

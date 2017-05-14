@@ -29,6 +29,10 @@
 #define _ATL_USE_DDX_FLOAT
 #endif
 
+#ifndef _WTL_NO_CSTRING
+#define _WTL_NO_CSTRING
+#endif
+
 #include <atlbase.h>
 #include <atlstr.h>
 #include <atlwin.h>
@@ -43,6 +47,8 @@
 #include <wtl/atlctrls.h>
 #include <wtl/atldlgs.h>
 #include <wtl/atlddx.h>
+#include <wtl/atlmisc.h>
+#include <wtl/atlcrack.h>
 
 extern CAppModule _Module;
 

@@ -29,6 +29,8 @@ public:
     , m_nPendingPrice(0)
     , m_bAutoSubmitCaptcha(false)
     , m_nSubmitCaptcahPrice(300)
+    , m_bAutoSubmitByTime(false)
+    , m_fFinalSubmitTime(3.5f)
     , m_bidInfoMonitor(CallBackReceivedBidMsg, this)
 	{
 	}
@@ -77,14 +79,16 @@ public:
 
   virtual BOOL OnIdle();
  
-	BEGIN_MSG_MAP(CMainDlg)
+  BEGIN_MSG_MAP_EX(CMainDlg)
     CHAIN_MSG_MAP(CAxDialogImpl<CMainDlg>)
-		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
-    MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
+    MSG_WM_INITDIALOG(OnInitDialog)
+    MSG_WM_DESTROY(OnDestroy)
 		COMMAND_ID_HANDLER(IDC_BUTTON_BROWSE, OnBrowse)
 		COMMAND_ID_HANDLER(IDCANCEL, OnCancel)
-		MESSAGE_HANDLER(WM_SYSCOMMAND, OnSysCommand)
-    MESSAGE_HANDLER(WM_CTLCOLORSTATIC, OnCtlColorStatic)
+    MSG_WM_SYSCOMMAND(OnSysCommand)
+    MSG_WM_CTLCOLORSTATIC(OnCtlColorStatic)
+    MSG_WM_TIMER(OnTimer)
+    COMMAND_HANDLER(IDC_CHECK_FORCESUBMITTIME, BN_CLICKED, OnBnClickedForceSubmitByTime)
     MESSAGE_HANDLER(WM_POSTCALLBACK, OnPostAction)
     COMMAND_HANDLER(IDC_COMBO_LOG, CBN_SELCHANGE, OnCbnSelchangeLog)
     CHAIN_MSG_MAP(CDialogResize<CMainDlg>)
@@ -97,6 +101,8 @@ public:
     DDX_UINT_RANGE(IDC_EDIT_AUTOPRICE, m_nAutoBidExtraPrice, 0, 100000)
     DDX_CHECK(IDC_CHECK_SUBMITCAPTCHA, m_bAutoSubmitCaptcha)
     DDX_UINT_RANGE(IDC_EDIT_CAPTCHAPRICE, m_nSubmitCaptcahPrice, 0, 100000)
+    DDX_CHECK(IDC_CHECK_FORCESUBMITTIME, m_bAutoSubmitByTime)
+    DDX_FLOAT_RANGE(IDC_EDIT_FORCESUBMITTIME, m_fFinalSubmitTime, .0f, 1800.0f)
   END_DDX_MAP()
 
   BEGIN_DLGRESIZE_MAP(CMainDlg)
@@ -115,13 +121,17 @@ public:
     DLGRESIZE_CONTROL(IDC_CHECK_SUBMITCAPTCHA, DLSZ_MOVE_X)
     DLGRESIZE_CONTROL(IDC_EDIT_CAPTCHAPRICE, DLSZ_MOVE_X)
     DLGRESIZE_CONTROL(IDC_SPIN_CAPTCAHPRICE, DLSZ_MOVE_X)
-    DLGRESIZE_CONTROL(IDC_COMBO_LOG, DLSZ_MOVE_X)
     DLGRESIZE_CONTROL(IDC_STATIC_TEXT_MINPRICE, DLSZ_MOVE_X)
     DLGRESIZE_CONTROL(IDC_STATIC_TEXT_REMAINTIME, DLSZ_MOVE_X)
     DLGRESIZE_CONTROL(IDC_STATIC_TEXT_SECOND, DLSZ_MOVE_X)
     DLGRESIZE_CONTROL(IDC_STATIC_TEXT_REACH, DLSZ_MOVE_X)
     DLGRESIZE_CONTROL(IDC_STATIC_TEXT_WHEN, DLSZ_MOVE_X)
-    DLGRESIZE_CONTROL(IDC_STATIC_TEXT_LOG, DLSZ_MOVE_X)
+    DLGRESIZE_CONTROL(IDC_CHECK_FORCESUBMITTIME, DLSZ_MOVE_X)
+    DLGRESIZE_CONTROL(IDC_EDIT_FORCESUBMITTIME, DLSZ_MOVE_X)
+    DLGRESIZE_CONTROL(IDC_SPIN_FORCESUBMITTIME, DLSZ_MOVE_X)
+    DLGRESIZE_CONTROL(IDC_STATIC_TEXT_FORCESUBMITTIME, DLSZ_MOVE_X)
+    DLGRESIZE_CONTROL(IDC_STATIC_TEXT_LOG, DLSZ_MOVE_X|DLSZ_MOVE_Y)
+    DLGRESIZE_CONTROL(IDC_COMBO_LOG, DLSZ_MOVE_X|DLSZ_MOVE_Y)
   END_DLGRESIZE_MAP()
 
   BEGIN_SINK_MAP(CMainDlg)
@@ -145,6 +155,8 @@ private:
   int m_nPendingPrice;
   bool m_bAutoSubmitCaptcha;
   int m_nSubmitCaptcahPrice;
+  bool m_bAutoSubmitByTime;
+  float m_fFinalSubmitTime;
 
   BidInfoMonitor m_bidInfoMonitor;
   BidMessage m_latestBidMsg;
@@ -153,12 +165,14 @@ private:
   void __stdcall OnNavigateComplete2(IDispatch* pDisp, VARIANT* URL);
   //void __stdcall OnEventDocumentComplete(IDispatch* /*pDisp*/, VARIANT* URL);
 
-  LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
-  LRESULT OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
-  LRESULT OnCtlColorStatic(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
+  LRESULT OnInitDialog(HWND /*hWnd*/, LPARAM /*lParam*/);
+  void OnDestroy();
+  HBRUSH OnCtlColorStatic(CDCHandle dc, CStatic wndStatic);
   LRESULT OnBrowse(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
   LRESULT OnCancel(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-  LRESULT OnSysCommand(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled);
+  void OnSysCommand(UINT nID, CPoint point);
+  void OnTimer(UINT_PTR nIDEvent);
+  LRESULT OnBnClickedForceSubmitByTime(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
   LRESULT OnTest(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
   LRESULT OnIEEnterKey(WPARAM wParam, LPARAM lParam);
   LRESULT OnCbnSelchangeLog(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);

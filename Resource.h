@@ -23,14 +23,18 @@
 #define IDC_CHECK_SUBMITCAPTCHA         1021
 #define IDC_EDIT_CAPTCHAPRICE           1022
 #define IDC_SPIN_CAPTCAHPRICE           1023
-#define IDC_STATIC_TEXT_LOG             1029
-#define IDC_COMBO_LOG                   1030
-#define IDC_STATIC_GROUP_PARAMETER      1031
-#define IDC_STATIC_TEXT_MINPRICE        1032
-#define IDC_STATIC_TEXT_REMAINTIME      1033
-#define IDC_STATIC_TEXT_SECOND          1034
-#define IDC_STATIC_TEXT_REACH           1035
-#define IDC_STATIC_TEXT_WHEN            1036
+#define IDC_STATIC_TEXT_LOG             1024
+#define IDC_COMBO_LOG                   1025
+#define IDC_STATIC_GROUP_PARAMETER      1026
+#define IDC_STATIC_TEXT_MINPRICE        1027
+#define IDC_STATIC_TEXT_REMAINTIME      1028
+#define IDC_STATIC_TEXT_SECOND          1029
+#define IDC_STATIC_TEXT_REACH           1030
+#define IDC_STATIC_TEXT_WHEN            1031
+#define IDC_CHECK_FORCESUBMITTIME       1032
+#define IDC_EDIT_FORCESUBMITTIME        1033
+#define IDC_SPIN_FORCESUBMITTIME        1034
+#define IDC_STATIC_TEXT_FORCESUBMITTIME 1035
 
 // Next default values for new objects
 // 
@@ -39,7 +43,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        130
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1037
+#define _APS_NEXT_CONTROL_VALUE         1036
 #define _APS_NEXT_SYMED_VALUE           109
 #endif
 #endif
