@@ -7,4 +7,7 @@
 
 仅支持64位 Windows 7/8/8.1/10
 
-[v1.2下载](https://github.com/winston2tim/epp/releases/download/v1.2/epp_v1.2.zip)
+[v1.3下载](https://github.com/winston2tim/epp/releases/download/v1.3/epp_v1.3.zip)
+
+### 编译
+仅支持Visual Studio 2017编译
