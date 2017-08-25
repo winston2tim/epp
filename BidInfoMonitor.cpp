@@ -44,21 +44,21 @@ static wchar_t *DecodeBidInfo(const char* msg) {
 
 static int ParseTimeToSeconds(const wchar_t *strTime, bool hasSecond)
 {
-  if (!strTime || !*strTime || (hasSecond && wcslen(strTime) < 8) || (!hasSecond && wcslen(strTime) < 5))
+  if (!strTime || !*strTime || (hasSecond && wcslen(strTime) < 6) || (!hasSecond && wcslen(strTime) < 3))
     return 0;
 
   TCHAR buf[3] = { 0 };
   buf[0] = strTime[0];
   buf[1] = strTime[1];
   int hour = _wtoi(buf);
-  buf[0] = strTime[3];
-  buf[1] = strTime[4];
+  buf[0] = strTime[2];
+  buf[1] = strTime[3];
   int min = _wtoi(buf);
   int second = 0;
   if (hasSecond)
   {
-    buf[0] = strTime[6];
-    buf[1] = strTime[7];
+    buf[0] = strTime[4];
+    buf[1] = strTime[5];
     second = _wtoi(buf);
   }
 
@@ -90,16 +90,16 @@ static void ParseNotification(wchar_t *msg, BidMessage& bidMsg)
   if (phase == L'A') // first bid phase
   {
     bidMsg.phase = BidMessage::FirstPhase;
-    bidMsg.serverTime = ParseTimeToSeconds(msgArray[13], true);
-    bidMsg.endTime = ParseTimeToSeconds(msgArray[10], false);
-    bidMsg.tradeablePrice = _wtoi(msgArray[5]);
+    bidMsg.serverTime = ParseTimeToSeconds(msgArray[10], true);
+    bidMsg.endTime = ParseTimeToSeconds(msgArray[8], false);
+    bidMsg.tradeablePrice = _wtoi(msgArray[12]);
   }
   else if (phase == L'B') // second bid phase
   {
     bidMsg.phase = BidMessage::ModifyPhase;
-    bidMsg.serverTime = ParseTimeToSeconds(msgArray[13], true);
-    bidMsg.endTime = ParseTimeToSeconds(msgArray[12], false);
-    bidMsg.tradeablePrice = _wtoi(msgArray[14]);
+    bidMsg.serverTime = ParseTimeToSeconds(msgArray[10], true);
+    bidMsg.endTime = ParseTimeToSeconds(msgArray[9], false);
+    bidMsg.tradeablePrice = _wtoi(msgArray[11]);
   }
   else if (phase == L'C') // non-bid phase
   {
