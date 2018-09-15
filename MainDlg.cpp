@@ -8,12 +8,14 @@
 #define FOCUS_ON_CAPTCHA  ClickBrowser(740, 255);
 #define SUBMIT_CAPTCHA    ClickBrowser(550, 335);
 
+#define DEFAULT_SWF_OFFSET {1, 170}
+
 static const wchar_t *script_swf_left = L"$(\"#testsocket\").position().left - $(document).scrollLeft()";
 static const wchar_t *script_swf_top = L"$(\"#testsocket\").position().top - $(document).scrollTop()";
 
 static POINT GetSwfOffset(CComPtr<IWebBrowser2>& webBrowser)
 {
-  POINT offset = {LONG_MAX, LONG_MAX};
+  POINT offset = DEFAULT_SWF_OFFSET;
 
   CComQIPtr<IDispatch> spDisp;
   CComQIPtr<IHTMLDocument2> pHTMLDoc;
@@ -30,7 +32,7 @@ static POINT GetSwfOffset(CComPtr<IWebBrowser2>& webBrowser)
   }
   else
   {
-    LOGE << "Failed to get offset of swf in DOM";
+    LOGW << "Failed to get offset of swf in DOM";
   }
 
   return offset;
